@@ -178,6 +178,7 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
             .as_bytes(),
         )
         .expect("DB파일 쓰기 실패");
+    println!("작업이 완료되었습니다. result_{}.json파일로 저장되었습니다.", program_args.db_version.clone());
     Ok(())
 }
 
