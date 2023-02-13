@@ -237,10 +237,9 @@ pub fn make_db_content<'make_db>(
                 .unwrap()
                 .insert(temp.major.as_str().unwrap());
         }
-        subject_map
-            .get_mut(temp.department.as_str().unwrap())
-            .unwrap()
-            .push(json!({
+        if let Some(subject_map) = subject_map
+            .get_mut(temp.department.as_str().unwrap()) {
+            subject_map.push(json!({
                 "trgtGrdeCd": subject["trgtGrdeCd"],
                 "subjtNm": subject["subjtNm"],
                 "ltrPrfsNm" : subject["ltrPrfsNm"],
@@ -261,6 +260,9 @@ pub fn make_db_content<'make_db>(
                 "estbDpmjNm": temp.department,
                 "estbMjorNm": temp.major,
             }));
+        } else {
+            println!("주의: 분류에 실패한 학부 및 학과가 존재합니다. ({})", temp.department.as_str().unwrap())
+        }
     }
     let result = json!({
         "departments": departments_map,
