@@ -167,6 +167,7 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
                 &class_todo_content,
                 program_args.latest_app_version,
                 program_args.db_version,
+                program_args.open_class_filename == program_args.class_todo_filename
             )
             .unwrap_or_else(|error| {
                 println!(
@@ -187,6 +188,8 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
 /// 제공된 두 파일의 내용과 인자값을 바탕으로 최종 DB파일을 생성하는 메서드이다.
 /// 제공된 파일에서 필요한 부분들만 합쳐서 진행되며, 만일 필요한 부분에 대한 정보가 제공된 파일에 존재하지 않는 경우
 /// `null`로 기록된다.
+/// `quick_mode`를 통해 생성한 DB는 빠른 개설 강좌 조회용 DB임을 명시할 수 있다. 이 경우 `estbLectDtaiList_quick`라는
+/// 키 값을 통해 과목 정보에 접근할 수 있다.
 ///
 /// ## Errors
 /// 제공된 파일의 내용을 기반으로 JSON해독이 불가능 한 경우 오류가 발생한다.
@@ -195,6 +198,7 @@ pub fn make_db_content<'make_db>(
     class_todo_content: &'make_db str,
     latest_app_version: &'make_db str,
     db_version: &'make_db str,
+    quick_mode: bool
 ) -> Result<String, Box<dyn Error>> {
     let open_class_data: Value = serde_json::from_str(open_class_content)?;
     let class_todo_data: Value = serde_json::from_str(class_todo_content)?;
@@ -265,8 +269,8 @@ pub fn make_db_content<'make_db>(
         }
     }
     let result = json!({
-        "departments": departments_map,
-        "estbLectDtaiList": subject_map,
+        if quick_mode {"departments_quick"} else {"departments"}: departments_map,
+        if quick_mode {"estbLectDtaiList_quick"} else {"estbLectDtaiList"}: subject_map,
         "version": {
             "app_ver": latest_app_version,
             "db_ver": db_version,
