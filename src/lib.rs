@@ -229,9 +229,15 @@ pub fn make_db_content<'make_db>(
             println!("개설 강죄 조회 DB로부터 과목정보를 가져오는데 문제가 발생하였습니다.");
             std::process::exit(1);
         });
+    let todo_subjects = class_todo_data["estbLectDtaiList"]
+        .as_array()
+        .unwrap_or_else(|| {
+            println!("강의 계획서 DB로부터 과목 정보를 가져오는데 문제가 발생하였습니다.");
+            std::process::exit(1);
+        });
     for subject in open_subjects.iter() {
         let temp = Department::get_department_info(
-            open_subjects,
+            todo_subjects,
             subject["subjtCd"].as_str().unwrap_or(""),
             subject["diclNo"].as_str().unwrap_or(""),
         );
