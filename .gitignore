@@ -1,1 +1,3 @@
 /target
+/hidden_sample/
+result*.json
