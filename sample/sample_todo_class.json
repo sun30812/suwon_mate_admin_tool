@@ -53,6 +53,7 @@
       "point": 1,
       "cplanYn": "입력",
       "flangLtrRt": 60,
+      "mpno": "010-0000-0000",
       "email": "test@suwon.ac.kr",
       "subjtEstbSmrCd": "20"
     },
@@ -79,6 +80,7 @@
       "estbSubjtNm": "전공진로세미나2",
       "point": 1,
       "cplanYn": "입력",
+      "mpno": "010-1234-0000",
       "email": "test@suwon.ac.kr",
       "subjtEstbSmrCd": "20"
     },

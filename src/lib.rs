@@ -61,44 +61,48 @@ impl<'a> ProgramArgument<'a> {
 }
 
 #[derive(PartialEq, Debug)]
-/// 특정 과목의 학부, 학과, 이메일 주소를 가진 구조체이다.
-pub struct Department<'department> {
+/// 강의계획서로부터 가져온 특정 과목의 학부, 학과, 이메일 주소를 가진 구조체이다.
+pub struct ClassTodo<'todo_class> {
     /// 과목 수강 대상자의 학부
-    pub department: &'department Value,
+    pub department: &'todo_class Value,
     /// 과목 수강 대상자의 학과
-    pub major: &'department Value,
+    pub major: &'todo_class Value,
     /// 강의자의 이메일 주소
-    pub email: &'department Value,
+    pub email: &'todo_class Value,
+    /// 강의자의 휴대전화 번호
+    pub phone: &'todo_class Value,
 }
 
-impl<'department> Department<'department> {
+impl<'todo_class> ClassTodo<'todo_class> {
     /// 특정 과목의 학부, 학과, 이메일 주소 포함한 [Department]를 생성한다.
     ///
     /// ## Examples
     /// ```
     /// use serde_json::Value;
-    /// use suwon_mate_admin_tool::Department;
-    /// let department_info = Department::new(&Value::String("컴퓨터학부".to_string()), &Value::String("컴퓨터학과".to_string()), &Value::String("sun30812@naver.com".to_string()));
+    /// use suwon_mate_admin_tool::ClassTodo;
+    /// let department_info = ClassTodo::new(&Value::String("컴퓨터학부".to_string()), &Value::String("컴퓨터학과".to_string()), &Value::String("sun30812@naver.com".to_string()), &Value::String("010-0000-0000".to_string()));
     /// ```
     pub fn new(
-        department: &'department Value,
-        major: &'department Value,
-        email: &'department Value,
+        department: &'todo_class Value,
+        major: &'todo_class Value,
+        email: &'todo_class Value,
+        phone: &'todo_class Value,
     ) -> Self {
         Self {
             department,
             major,
             email,
+            phone,
         }
     }
-    /// **강의 계획서에서** 과목의 정보가 포함된 목록인 `subjects`로부터 특정 과목의 학부, 학과, 이메일 주소를 알아낼 때 사용할 수 있는 메서드
+    /// **강의 계획서에서** 과목의 정보가 포함된 목록인 `subjects`로부터 특정 과목의 학부, 학과, 이메일 주소, 전화번호를 알아낼 때 사용할 수 있는 메서드
     ///
     /// ## Examples
     /// ```
     /// use std::fs::File;
     /// use std::io::Read;
     /// use serde_json::Value;
-    /// use suwon_mate_admin_tool::Department;
+    /// use suwon_mate_admin_tool::ClassTodo;
     /// let mut dummy_open_class_file =
     ///             File::open("sample/sample_todo_class.json").expect("Sample파일을 찾을 수 없습니다.");
     ///         let mut dummy_open_class_data = String::new();
@@ -110,12 +114,12 @@ impl<'department> Department<'department> {
     ///             .as_array()
     ///             .expect("JSON 파싱 실패(2단계)");
     ///         assert_eq!(
-    ///             Department::new(&Value::String("경영학부".to_string()), &Value::Null, &Value::String("test@suwon.ac.kr".to_string())),
-    ///             Department::get_department_info(subjects, "11416", "038")
+    ///             ClassTodo::new(&Value::String("경영학부".to_string()), &Value::Null, &Value::String("test@suwon.ac.kr".to_string()), &Value::String("010-0000-0000".to_string())),
+    ///             ClassTodo::get_department_info(subjects, "11416", "038")
     ///         )
     ///```
     pub fn get_department_info(
-        subjects: &'department Vec<Value>,
+        subjects: &'todo_class Vec<Value>,
         subject_code: &str,
         dicl_number: &str,
     ) -> Self {
@@ -130,10 +134,11 @@ impl<'department> Department<'department> {
                     &subject["estbDpmjNm"],
                     &subject["estbMjorNm"],
                     &subject["email"],
+                    &subject["mpno"],
                 );
             }
         }
-        Self::new(&Value::Null, &Value::Null, &Value::Null)
+        Self::new(&Value::Null, &Value::Null, &Value::Null, &Value::Null)
     }
 }
 
@@ -167,7 +172,7 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
                 &class_todo_content,
                 program_args.latest_app_version,
                 program_args.db_version,
-                program_args.open_class_filename == program_args.class_todo_filename
+                program_args.open_class_filename == program_args.class_todo_filename,
             )
             .unwrap_or_else(|error| {
                 println!(
@@ -179,7 +184,10 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
             .as_bytes(),
         )
         .expect("DB파일 쓰기 실패");
-    println!("작업이 완료되었습니다. result_{}.json파일로 저장되었습니다.", program_args.db_version.clone());
+    println!(
+        "작업이 완료되었습니다. result_{}.json파일로 저장되었습니다.",
+        program_args.db_version.clone()
+    );
     Ok(())
 }
 
@@ -198,7 +206,7 @@ pub fn make_db_content<'make_db>(
     class_todo_content: &'make_db str,
     latest_app_version: &'make_db str,
     db_version: &'make_db str,
-    quick_mode: bool
+    quick_mode: bool,
 ) -> Result<String, Box<dyn Error>> {
     let open_class_data: Value = serde_json::from_str(open_class_content)?;
     let class_todo_data: Value = serde_json::from_str(class_todo_content)?;
@@ -211,8 +219,8 @@ pub fn make_db_content<'make_db>(
     let mut departments_set = HashSet::new();
     for department in departments.iter() {
         departments_set.insert(department["estbDpmjNm"].as_str().unwrap_or_else(|| {
-            println!("학부 정보 확인 도중 문제가 발생하였습니다.");
-            std::process::exit(1);
+            println!("계획서 파일에서 누락된 학부가 존재합니다.");
+            ""
         }));
     }
     let mut departments_map: HashMap<&str, HashSet<&str>> = HashMap::new();
@@ -220,8 +228,10 @@ pub fn make_db_content<'make_db>(
         departments_map.insert(department, HashSet::new());
     }
     let mut subject_map: HashMap<String, Vec<Value>> = HashMap::new();
+    let mut contact_map: HashMap<String, HashMap<String, Value>> = HashMap::new();
     for department in departments_set.iter() {
         subject_map.insert(department.parse()?, vec![]);
+        contact_map.insert(department.parse()?, HashMap::new());
     }
     let open_subjects = open_class_data["estbLectDtaiList"]
         .as_array()
@@ -236,7 +246,7 @@ pub fn make_db_content<'make_db>(
             std::process::exit(1);
         });
     for subject in open_subjects.iter() {
-        let temp = Department::get_department_info(
+        let temp = ClassTodo::get_department_info(
             todo_subjects,
             subject["subjtCd"].as_str().unwrap_or(""),
             subject["diclNo"].as_str().unwrap_or(""),
@@ -247,8 +257,7 @@ pub fn make_db_content<'make_db>(
                 .unwrap()
                 .insert(temp.major.as_str().unwrap());
         }
-        if let Some(subject_map) = subject_map
-            .get_mut(temp.department.as_str().unwrap()) {
+        if let Some(subject_map) = subject_map.get_mut(temp.department.as_str().unwrap()) {
             subject_map.push(json!({
                 "trgtGrdeCd": subject["trgtGrdeCd"],
                 "subjtNm": subject["subjtNm"],
@@ -261,7 +270,6 @@ pub fn make_db_content<'make_db>(
                 "diclNo" : subject["diclNo"],
                 "subjtEstbYear" : subject["subjtEstbYear"],
                 "point" : subject["point"],
-                "email": temp.email,
                 "cltTerrNm" : subject["cltTerrNm"],
                 "sexCdNm" : subject["sexCdNm"],
                 "hffcStatNm" : subject["hffcStatNm"],
@@ -271,12 +279,22 @@ pub fn make_db_content<'make_db>(
                 "estbMjorNm": temp.major,
             }));
         } else {
-            println!("주의: 분류에 실패한 학부 및 학과가 존재합니다. ({})", temp.department.as_str().unwrap())
+            println!(
+                "주의: 분류에 실패한 학부 및 학과가 존재합니다. ({})",
+                temp.department.as_str().unwrap()
+            )
+        }
+        if let Some(contact_map) = contact_map.get_mut(temp.department.as_str().unwrap()) {
+            contact_map.insert(subject["ltrPrfsNm"].as_str().unwrap_or("").to_string(), json!({
+            "email": temp.email,
+            "mpno": temp.phone
+            }));
         }
     }
     let result = json!({
         if quick_mode {"departments_quick"} else {"departments"}: departments_map,
         if quick_mode {"estbLectDtaiList_quick"} else {"estbLectDtaiList"}: subject_map,
+    "contacts": contact_map,
         "version": {
             "app_ver": latest_app_version,
             "db_ver": db_version,
