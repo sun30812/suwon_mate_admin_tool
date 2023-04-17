@@ -174,14 +174,14 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
                 program_args.db_version,
                 program_args.open_class_filename == program_args.class_todo_filename,
             )
-            .unwrap_or_else(|error| {
-                println!(
-                    "DB 내용 생성 과정에서 다음과 같은 오류가 발생되었습니다: {}",
-                    error
-                );
-                std::process::exit(1);
-            })
-            .as_bytes(),
+                .unwrap_or_else(|error| {
+                    println!(
+                        "DB 내용 생성 과정에서 다음과 같은 오류가 발생되었습니다: {}",
+                        error
+                    );
+                    std::process::exit(1);
+                })
+                .as_bytes(),
         )
         .expect("DB파일 쓰기 실패");
     println!(
@@ -224,9 +224,6 @@ pub fn make_db_content<'make_db>(
         }));
     }
     let mut departments_map: HashMap<&str, HashSet<&str>> = HashMap::new();
-    for department in departments_set.iter() {
-        departments_map.insert(department, HashSet::new());
-    }
     let mut subject_map: HashMap<String, Vec<Value>> = HashMap::new();
     let mut contact_map: HashMap<String, HashMap<String, Value>> = HashMap::new();
     for department in departments_set.iter() {
@@ -252,6 +249,9 @@ pub fn make_db_content<'make_db>(
             subject["diclNo"].as_str().unwrap_or(""),
         );
         if !temp.major.is_null() {
+            if !departments_map.contains_key(temp.department.as_str().unwrap()) {
+                departments_map.insert(temp.department.as_str().unwrap(), HashSet::new());
+            }
             departments_map
                 .get_mut(temp.department.as_str().unwrap())
                 .unwrap()
@@ -285,10 +285,15 @@ pub fn make_db_content<'make_db>(
             )
         }
         if let Some(contact_map) = contact_map.get_mut(temp.department.as_str().unwrap()) {
-            contact_map.insert(subject["ltrPrfsNm"].as_str().unwrap_or("").to_string(), json!({
+            match subject["ltrPrfsNm"].as_str() {
+                None => {}
+                Some(name) => {
+                    contact_map.insert(name.to_string(), json!({
             "email": temp.email,
             "mpno": temp.phone
             }));
+                }
+            }
         }
     }
     let result = json!({
