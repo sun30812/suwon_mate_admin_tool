@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: output
-          path: suwon_mate_admin_tool_win
+          path: suwon_mate_admin_tool_win.exe
           if-no-files-found: error
 
   build-ubuntu:
