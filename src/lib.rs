@@ -49,6 +49,13 @@ pub struct ClassTodo<'todo_class> {
 impl<'todo_class> ClassTodo<'todo_class> {
     /// 특정 과목의 학부, 학과, 이메일 주소 포함한 [Department]를 생성한다.
     ///
+    /// # Arguments
+    ///
+    /// * `department` - 과목 수강 대상자의 학부에 해당되는 `Value`
+    /// * `major` - 과목 수강 대상자의 학과에 해당되는 `Value`
+    /// * `email` - 강의자의 이메일 주소에 해당되는 `Value`
+    /// * `phone` - 강의자의 휴대전화 번호에 해당되는 `Value`
+    ///
     /// ## Examples
     /// ```
     /// use serde_json::Value;
@@ -69,6 +76,12 @@ impl<'todo_class> ClassTodo<'todo_class> {
         }
     }
     /// **강의 계획서에서** 과목의 정보가 포함된 목록인 `subjects`로부터 특정 과목의 학부, 학과, 이메일 주소, 전화번호를 알아낼 때 사용할 수 있는 메서드
+    ///
+    /// ## Arguments
+    ///
+    /// * `subjects` - `Value` 벡터형의 과목들에 대한 정보
+    /// * `subject_code` - 스트링 슬라이스 형의 학부를 찾고자 하는 과목의 과목 코드
+    /// * `dicl_number` - 스트링 슬라이스 형의 학부를 찾고자 하는 과목의 분반 코드
     ///
     /// ## Examples
     /// ```
@@ -118,9 +131,14 @@ impl<'todo_class> ClassTodo<'todo_class> {
 /// 지정된 파일을 읽고 쓰는 작업을 진행하는 메서드
 ///
 /// `program_args`로부터 필요한 인자값을 받아서 파일을 읽고 작업 후 파일을 쓰는 작업을 진행한다.
+///
+/// ## Arguments
+///
+/// * `program_args` - `ProgramArgument`형태의 프로그램 인자
+///
 /// ## Errors
-/// * 인자값으로 주어진 파일이 존재하지 않는 경우
-/// * 표준 IO가 정상적으로 작동하지 않는 경우
+/// * `ProgramArgument`를 통해 인자값으로 주어진 파일이 존재하지 않는 경우
+/// * 표준 I/O가 정상 동작하지 않는 경우
 /// ## Panics
 /// 파일의 쓰기권한이 부여되지 않은 경우 해당 메서드는 호출될 수 없다.
 pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>> {
@@ -169,8 +187,32 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
 /// 제공된 두 파일의 내용과 인자값을 바탕으로 최종 DB파일을 생성하는 메서드이다.
 /// 제공된 파일에서 필요한 부분들만 합쳐서 진행되며, 만일 필요한 부분에 대한 정보가 제공된 파일에 존재하지 않는 경우
 /// `null`로 기록된다.
-/// `quick_mode`를 통해 생성한 DB는 빠른 개설 강좌 조회용 DB임을 명시할 수 있다. 이 경우 `estbLectDtaiList_quick`라는
+/// `quick_mode`를 통해 생성한 DB는 개설 강좌 조회용 DB로만 만들어진 불완전한 DB 파일임을 명시할 수 있다. 이 경우 `estbLectDtaiList_quick`라는
 /// 키 값을 통해 과목 정보에 접근할 수 있다.
+///
+/// ## Arguments
+///
+/// * `open_class_content` - 스트링 슬라이스 형태의 개설 강좌 조회 DB 파일 내용
+/// * `class_todo_content` - 스트링 슬라이스 형태의 강의계획서 DB 파일 내용
+/// * `latest_app_version` - 스트링 슬라이스 형태의 최신 앱 버전
+/// * `db_version` - 스트링 슬라이스 형태의 DB 버전
+/// * `quick_mode` - `bool`타입의 불완전한 DB 파일 만들기 기능 활성화 여부
+///
+/// ## Examples
+///
+/// ```
+/// use std::fs::File;
+/// use std::io::Read;
+/// use suwon_mate_admin_tool::make_db_content;
+/// let mut dummy_open_class_file =
+///                  File::open("sample/sample_todo_class.json").expect("Sample파일을 찾을 수 없습니다.");
+///              let mut dummy_open_class_data = String::new();
+///              dummy_open_class_file
+///                  .read_to_string(&mut dummy_open_class_data)
+///                  .expect("Sample파일을 읽을 수 없습니다.");
+/// let content = make_db_content(&dummy_open_class_data, &dummy_open_class_data, "test", "test", true);
+/// assert_ne!(content.unwrap(), "".to_string());
+/// ```
 ///
 /// ## Errors
 /// 제공된 파일의 내용을 기반으로 JSON해독이 불가능 한 경우 오류가 발생한다.

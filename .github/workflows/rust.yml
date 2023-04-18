@@ -3,6 +3,8 @@ name: Rust Build & test
 on:
   push:
     branches: [ "main", "feature/*", "hotfix/*" ]
+    tags-ignore:
+      - 'v*'
   pull_request:
     branches: [ "main" ]
 
