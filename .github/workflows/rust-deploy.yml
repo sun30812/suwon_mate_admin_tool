@@ -51,7 +51,7 @@ jobs:
         run: cargo build --release --verbose
 
       - name: Rename output
-        run: mv target/release/suwon_mate_admin_tool suwon_mate_admin_tool_win
+        run: Move-Item -Path target\release\suwon_mate_admin_tool -Destination suwon_mate_admin_tool_win
 
       - name: Upload output(Windows)
         uses: actions/upload-artifact@v3
