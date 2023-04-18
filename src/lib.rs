@@ -6,59 +6,32 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Write};
 
+use clap::Parser;
 use serde_json::{json, Value};
 
-/// 프로그램 인자값 모음
+/// 수원메이트용 DB제작 프로그램
 ///
-/// 프로그램에서 사용되는 인자값들을 나타내는 구조체이다.
-pub struct ProgramArgument<'a> {
-    /// 개설 강좌 조회 DB 파일 이름
-    pub open_class_filename: &'a str,
-    /// 강의 계획서 DB 파일 이름
-    pub class_todo_filename: &'a str,
+/// 수원 메이트 앱 용으로 사용될 json형태의 DB 파일을 제작할 수 있습니다.
+#[derive(Parser)]
+#[command(author)]
+pub struct ProgramArgument {
+    /// 개설 강좌 조회 DB 파일
+    #[arg(short, long)]
+    pub open_class_file: String,
+    /// 강의 계획서 DB 파일
+    #[arg(short, long)]
+    pub class_todo_file: String,
     /// DB에 기입할 최신 앱 버전
-    pub latest_app_version: &'a str,
+    #[arg(short, long, default_value_t = String::from("1.0"))]
+    pub app_version: String,
     /// DB에 기입할 DB 버전
-    pub db_version: &'a str,
+    #[arg(short, long)]
+    pub db_version: String,
+    /// DB에 기입할 레거시 앱 버전
+    #[arg(short, long, default_value_t = String::from("1.0"))]
+    pub legacy_app_version: String,
 }
 
-impl<'a> ProgramArgument<'a> {
-    /// 프로그램으로부터 인자값을 받아 [ProgramArgument]에 맞게 변환한다.
-    ///
-    /// # Error
-    /// 만일 필요로 하는 인자의 개수보다 적은 경우 오류를 발생시킨다.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::env;
-    /// use suwon_mate_admin_tool::ProgramArgument;
-    /// let args: Vec<String> = vec!["1".to_string(), "sample_todo_class.json".to_string(), "3".to_string(), "4".to_string(), "5".to_string()];
-    ///
-    ///     let program_arguments = ProgramArgument::new(&args).unwrap_or_else(|error| {
-    ///         println!(
-    ///             "인자값을 불러올 때 다음과 같은 오류가 발생했습니다.: {}",
-    ///             error
-    ///         );
-    ///         std::process::exit(1);
-    ///     });
-    /// println!("개설 강좌 조회 파일 이름은 {} 입니다.", program_arguments.open_class_filename)
-    ///```
-    pub fn new(args: &'a [String]) -> Result<Self, &'static str> {
-        if args.len() < 5 {
-            return Err(
-                "해당 프로그램인 인자로 개설 과목 DB 파일과 강의 계획서 DB 파일을 필요로 합니다.",
-            );
-        }
-
-        Ok(Self {
-            open_class_filename: &args[1],
-            class_todo_filename: &args[2],
-            latest_app_version: &args[3],
-            db_version: &args[4],
-        })
-    }
-}
 
 #[derive(PartialEq, Debug)]
 /// 강의계획서로부터 가져온 특정 과목의 학부, 학과, 이메일 주소를 가진 구조체이다.
@@ -151,8 +124,8 @@ impl<'todo_class> ClassTodo<'todo_class> {
 /// ## Panics
 /// 파일의 쓰기권한이 부여되지 않은 경우 해당 메서드는 호출될 수 없다.
 pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>> {
-    let mut open_class_file = File::open(program_args.open_class_filename)?;
-    let mut class_todo_file = File::open(program_args.class_todo_filename)?;
+    let mut open_class_file = File::open(program_args.open_class_file)?;
+    let mut class_todo_file = File::open(program_args.class_todo_file)?;
     let mut open_class_content = String::new();
     let mut class_todo_content = String::new();
     open_class_file.read_to_string(&mut open_class_content)?;
@@ -170,9 +143,9 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
             make_db_content(
                 &open_class_content,
                 &class_todo_content,
-                program_args.latest_app_version,
-                program_args.db_version,
-                program_args.open_class_filename == program_args.class_todo_filename,
+                &program_args.app_version,
+                &program_args.db_version,
+                open_class_content == class_todo_content,
             )
                 .unwrap_or_else(|error| {
                     println!(

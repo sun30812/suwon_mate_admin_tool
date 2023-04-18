@@ -1,0 +1,101 @@
+name: Rust test & deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  Test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run tests
+        run: cargo test --verbose
+
+  build-macos:
+    name: Build for macOS
+    needs: [ Test ]
+    runs-on: macos-latest
+    steps:
+      - name: Prepare code
+        uses: actions/checkout@v3
+
+      - name: Build for macOS
+        run: cargo build --release --verbose
+
+      - name: Rename output
+        run: mv target/release/suwon_mate_admin_tool suwon_mate_admin_tool_macos
+
+      - name: Upload output(macOS)
+        uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: suwon_mate_admin_tool_macos
+          if-no-files-found: error
+
+  build-windows:
+    name: Build for Windows
+    needs: [ Test ]
+    runs-on: windows-latest
+    steps:
+      - name: Prepare code
+        uses: actions/checkout@v3
+
+      - name: Build for Windows
+        run: cargo build --release --verbose
+
+      - name: Rename output
+        run: mv target/release/suwon_mate_admin_tool suwon_mate_admin_tool_win
+
+      - name: Upload output(Windows)
+        uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: suwon_mate_admin_tool_win
+          if-no-files-found: error
+
+  build-ubuntu:
+    name: Build for Ubuntu
+    needs: [ Test ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare code
+        uses: actions/checkout@v3
+
+      - name: Build for Ubuntu
+        run: cargo build --release --verbose
+
+      - name: Rename output
+        run: mv target/release/suwon_mate_admin_tool suwon_mate_admin_tool_ubuntu
+
+      - name: Upload output(Ubuntu)
+        uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: suwon_mate_admin_tool_ubuntu
+          if-no-files-found: error
+
+  Deploy:
+    name: Deploy to Github release
+    runs-on: ubuntu-latest
+    needs: [ build-macos, build-windows, build-ubuntu ]
+    steps:
+      - name: Download output files
+        uses: actions/download-artifact@v3
+        with:
+          name: output
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Upload to github release
+        uses: fnkr/github-action-ghr@v1
+        env:
+          GHR_PATH: ./
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
