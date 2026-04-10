@@ -33,7 +33,7 @@ jobs:
         run: mv target/release/suwon_mate_admin_tool suwon_mate_admin_tool_macos
 
       - name: Upload output(macOS)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         with:
           name: output
           path: suwon_mate_admin_tool_macos
@@ -54,7 +54,7 @@ jobs:
         run: Move-Item -Path target\release\suwon_mate_admin_tool.exe -Destination suwon_mate_admin_tool_win.exe
 
       - name: Upload output(Windows)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         with:
           name: output
           path: suwon_mate_admin_tool_win.exe
@@ -75,7 +75,7 @@ jobs:
         run: mv target/release/suwon_mate_admin_tool suwon_mate_admin_tool_ubuntu
 
       - name: Upload output(Ubuntu)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         with:
           name: output
           path: suwon_mate_admin_tool_ubuntu
@@ -87,7 +87,7 @@ jobs:
     needs: [ build-macos, build-windows, build-ubuntu ]
     steps:
       - name: Download output files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: output
 
