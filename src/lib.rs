@@ -237,10 +237,14 @@ pub fn make_db_content<'make_db>(
         });
     let mut departments_set = HashSet::new();
     for department in departments.iter() {
-        departments_set.insert(department["estbDpmjNm"].as_str().unwrap_or_else(|| {
-            println!("계획서 파일에서 누락된 학부가 존재합니다.");
-            ""
-        }));
+        match department["estbDpmjNm"].as_str() {
+            None => {
+                println!("계획서 파일에서 누락된 학부가 존재합니다.");
+            }
+            Some(depart_name) => {
+                departments_set.insert(depart_name);
+            }
+        }
     }
     let mut departments_map: HashMap<&str, HashSet<&str>> = HashMap::new();
     let mut subject_map: HashMap<String, Vec<Value>> = HashMap::new();
