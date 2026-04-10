@@ -30,6 +30,9 @@ pub struct ProgramArgument {
     /// DB에 기입할 레거시 앱 버전
     #[arg(short, long, default_value_t = String::from("1.0"))]
     pub legacy_app_version: String,
+    /// DB 내 연락처 정보 미포함
+    #[arg(short, long)]
+    pub skip_contact: bool,
 }
 
 #[derive(PartialEq, Debug)]
@@ -163,6 +166,7 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
                 &program_args.app_version,
                 &program_args.db_version,
                 open_class_content == class_todo_content,
+                program_args.skip_contact,
             )
             .unwrap_or_else(|error| {
                 println!(
@@ -209,7 +213,7 @@ pub fn file_process(program_args: ProgramArgument) -> Result<(), Box<dyn Error>>
 ///              dummy_open_class_file
 ///                  .read_to_string(&mut dummy_open_class_data)
 ///                  .expect("Sample파일을 읽을 수 없습니다.");
-/// let content = make_db_content(&dummy_open_class_data, &dummy_open_class_data, "test", "test", true);
+/// let content = make_db_content(&dummy_open_class_data, &dummy_open_class_data, "test", "test", true, true);
 /// assert_ne!(content.unwrap(), "".to_string());
 /// ```
 ///
@@ -221,6 +225,7 @@ pub fn make_db_content<'make_db>(
     latest_app_version: &'make_db str,
     db_version: &'make_db str,
     quick_mode: bool,
+    skip_contact: bool,
 ) -> Result<String, Box<dyn Error>> {
     let open_class_data: Value = serde_json::from_str(open_class_content)?;
     let class_todo_data: Value = serde_json::from_str(class_todo_content)?;
@@ -242,7 +247,9 @@ pub fn make_db_content<'make_db>(
     let mut contact_map: HashMap<String, HashMap<String, Value>> = HashMap::new();
     for department in departments_set.iter() {
         subject_map.insert(department.parse()?, vec![]);
-        contact_map.insert(department.parse()?, HashMap::new());
+        if !skip_contact {
+            contact_map.insert(department.parse()?, HashMap::new());
+        }
     }
     let open_subjects = open_class_data["estbLectDtaiList"]
         .as_array()
